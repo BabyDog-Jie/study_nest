@@ -8,13 +8,14 @@ import * as path from "path";
 @Module({
   imports: [
     AutoDatabaseModule.forRoot({
-      path: [path.join(__dirname, "./entity/**/*.js")]
+      path: [path.join(__dirname, "./entity/**/*.entity{.ts,.js}")],
+      global: true
     }),
     AutoControllerModule.forRoot({
-      path: [path.join(__dirname, "./controller/**/*.js")]
+      path: [path.join(__dirname, "./controller/**/*.controller.js")]
     }),
     AutoProviderModule.forRoot({
-      path: [path.join(__dirname, "./service/**/*.js")]
+      path: [path.join(__dirname, "./service/**/*.service.js")]
     })
   ],
   controllers: [AppController],

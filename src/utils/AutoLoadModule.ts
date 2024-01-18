@@ -4,16 +4,13 @@ import {Logger, Module} from "@nestjs/common";
 import {ConnectionOptions, createConnection} from 'typeorm';
 import DatabaseConfig from "../config/database";
 
-export type TModuleType = "__controller__" | "__injectable__" | "__entity__"
-
-export const getModuleByPath = (path: string[], moduleType: TModuleType) => {
+export const getModuleByPath = (path: string[]) => {
   if (Array.isArray(path) && path.length) {
     return path.map((i: string) => glob.sync(i))
       .flat()  // 或者使用 [].concat(...array) 来替代 flat()，具体取决于你的项目支持情况
       .map((path: string) => require(path))
       .map((i: any): any[] => Object.values(i) as any[])
       .flat()  // 或者使用 [].concat(...array)
-      .filter((i: any) => typeof i === 'function' && Reflect.getOwnMetadataKeys(i).includes(moduleType));
   } else {
     return []
   }
@@ -29,7 +26,7 @@ export interface IAutoLoadModuleOption {
 export class AutoControllerModule {
 
   static forRoot(options: IAutoLoadModuleOption): DynamicModule {
-    const controllers: any[] = getModuleByPath(options.path, '__controller__');
+    const controllers: any[] = getModuleByPath(options.path);
 
     if (controllers.length > 0) {
       Logger.log(`${options.name ? `[${options.name}] ` : ''}Auto loaded: ${controllers.map((i: any) => i.name).join(', ')}`, this.name);
@@ -51,7 +48,7 @@ export class AutoControllerModule {
 export class AutoProviderModule {
 
   static forRoot(options: IAutoLoadModuleOption): DynamicModule {
-    const providers: any[] = getModuleByPath(options.path, '__injectable__');
+    const providers: any[] = getModuleByPath(options.path);
 
     if (providers.length > 0) {
       Logger.log(`${options.name ? `[${options.name}] ` : ''}Auto loaded: ${providers.map((i: any) => i.name).join(', ')}`, this.name);
@@ -74,9 +71,7 @@ export class AutoProviderModule {
 export class AutoDatabaseModule {
 
   static async forRoot(options: IAutoLoadModuleOption): Promise<DynamicModule> {
-    const connections: any[] = getModuleByPath(options.path, "__entity__")
-
-    const entities: Function[] = connections.map((connection: any) => connection.options.entities).flat();
+    const entities: any[] = getModuleByPath(options.path)
 
     if (entities.length > 0) {
       Logger.log(`${options.name ? `[${options.name}] ` : ''}Auto loaded entities: ${entities.map((e: Function) => e.name).join(', ')}`, this.name);
