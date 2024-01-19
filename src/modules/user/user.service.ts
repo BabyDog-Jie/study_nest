@@ -20,4 +20,16 @@ export class UserService {
   async remove(id: string): Promise<void> {
     await this.usersRepository.delete(id);
   }
+
+  async createUser(): Promise<string> {
+    const data = new User()
+
+    data.firstName = "zhang";
+    data.lastName = "san";
+    data.isActive = Math.random() < 0.5
+
+    await this.usersRepository.save(data)
+
+    return "create success"
+  }
 }
