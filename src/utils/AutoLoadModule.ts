@@ -5,6 +5,7 @@ import {ConnectionOptions} from 'typeorm';
 import DatabaseConfig from "../config/database";
 import {TypeOrmModule} from "@nestjs/typeorm"
 import * as path from "path";
+import {APP_FILTER, APP_INTERCEPTOR} from "@nestjs/core";
 
 export const getModuleByPath = (path: string[]) => {
   if (Array.isArray(path) && path.length) {
@@ -115,5 +116,49 @@ export class AutoLoadDatabaseModule {
       global: options.global,
       imports: [TypeOrmModule.forRoot(connectionOptions)]
     };
+  }
+}
+
+@Module({})
+export class AutoLoadInterceptorModule {
+
+  static async forRoot(options: IAutoLoadModuleOption): Promise<DynamicModule> {
+    const interceptor: any[] = getModuleByPath(options.path)
+
+    if (interceptor.length > 0) {
+      Logger.log(`${options.name ? `[${options.name}] ` : ''}Auto loaded interceptor: ${interceptor.map((e: Function) => e.name).join(', ')}`, this.name);
+    } else {
+      Logger.warn(`${options.name ? `[${options.name}] ` : ''}No interceptor found`, this.name);
+    }
+
+    return {
+      module: AutoLoadInterceptorModule,
+      providers: interceptor.map(module => ({
+        provide: APP_INTERCEPTOR,
+        useClass: module
+      }))
+    }
+  }
+}
+
+@Module({})
+export class AutoLoadFilterModule {
+
+  static async forRoot(options: IAutoLoadModuleOption): Promise<DynamicModule> {
+    const filter: any[] = getModuleByPath(options.path)
+
+    if (filter.length > 0) {
+      Logger.log(`${options.name ? `[${options.name}] ` : ''}Auto loaded filter: ${filter.map((e: Function) => e.name).join(', ')}`, this.name);
+    } else {
+      Logger.warn(`${options.name ? `[${options.name}] ` : ''}No filter found`, this.name);
+    }
+
+    return {
+      module: AutoLoadInterceptorModule,
+      providers: filter.map(module => ({
+        provide: APP_FILTER,
+        useClass: module
+      }))
+    }
   }
 }
