@@ -1,24 +1,19 @@
 import { Module } from '@nestjs/common';
-import { AppService } from './app.service';
-import {AutoControllerModule, AutoDatabaseModule, AutoProviderModule} from "./utils/AutoLoadModule";
-import {AppController} from "./app.controller";
+import {AutoLoadModule, AutoLoadDatabaseModule} from "./utils/AutoLoadModule";
 import * as path from "path";
 
-// 自动加载目标目录下的模块文件（controller, service, database）
+// 自动加载目标目录下的模块文件（module, database）
 @Module({
   imports: [
-    AutoDatabaseModule.forRoot({
-      path: [path.join(__dirname, "./entity/**/*.entity{.ts,.js}")],
+    AutoLoadDatabaseModule.forRoot({
+      path: [path.join(__dirname, "./module/**/*.entity{.ts,.js}")],
       global: true
     }),
-    AutoControllerModule.forRoot({
-      path: [path.join(__dirname, "./controller/**/*.controller.js")]
-    }),
-    AutoProviderModule.forRoot({
-      path: [path.join(__dirname, "./service/**/*.service.js")]
+    AutoLoadModule.forRoot({
+      path: [path.join(__dirname, "./module/**/*.module{.ts,.js}")],
+      global: true
     })
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+  ]
 })
+
 export class AppModule {}

@@ -1,8 +1,10 @@
 import {DynamicModule} from "@nestjs/common";
 import * as glob from 'glob';
 import {Logger, Module} from "@nestjs/common";
-import {ConnectionOptions, createConnection} from 'typeorm';
+import {ConnectionOptions} from 'typeorm';
 import DatabaseConfig from "../config/database";
+import {TypeOrmModule} from "@nestjs/typeorm"
+import * as path from "path";
 
 export const getModuleByPath = (path: string[]) => {
   if (Array.isArray(path) && path.length) {
@@ -23,7 +25,7 @@ export interface IAutoLoadModuleOption {
 }
 
 @Module({})
-export class AutoControllerModule {
+export class AutoLoadControllerModule {
 
   static forRoot(options: IAutoLoadModuleOption): DynamicModule {
     const controllers: any[] = getModuleByPath(options.path);
@@ -35,17 +37,15 @@ export class AutoControllerModule {
     }
 
     return {
-      module: AutoControllerModule,
+      module: AutoLoadControllerModule,
       global: options.global,
-      providers: [...controllers],
-      controllers: [...controllers],
-      exports: [...controllers],
+      controllers: controllers
     };
   }
 }
 
 @Module({})
-export class AutoProviderModule {
+export class AutoLoadProviderModule {
 
   static forRoot(options: IAutoLoadModuleOption): DynamicModule {
     const providers: any[] = getModuleByPath(options.path);
@@ -59,16 +59,36 @@ export class AutoProviderModule {
 
     // 创建动态模块
     return {
-      module: AutoProviderModule,
+      module: AutoLoadProviderModule,
       global: options.global,
-      providers: [...providers],
-      exports: [...providers],
+      providers: providers
     };
   }
 }
 
 @Module({})
-export class AutoDatabaseModule {
+export class AutoLoadModule {
+
+  static forRoot(options: IAutoLoadModuleOption): DynamicModule {
+    const module: any[] = getModuleByPath(options.path);
+
+    if (module.length > 0) {
+      Logger.log(`${options.name ? `[${options.name}] ` : ''}Auto loaded: ${module.map((i: any) => i.name).join(', ')}`, this.name);
+    } else {
+      Logger.warn(`${options.name ? `[${options.name}] ` : ''}No providers found`, this.name);
+    }
+
+    // 创建动态模块
+    return {
+      module: AutoLoadModule,
+      global: options.global,
+      imports: module
+    };
+  }
+}
+
+@Module({})
+export class AutoLoadDatabaseModule {
 
   static async forRoot(options: IAutoLoadModuleOption): Promise<DynamicModule> {
     const entities: any[] = getModuleByPath(options.path)
@@ -80,7 +100,6 @@ export class AutoDatabaseModule {
     }
 
     const connectionOptions: ConnectionOptions = {
-      // Define your connection options here
       type: 'mariadb',
       host: DatabaseConfig.host,
       port: 3306,
@@ -91,18 +110,10 @@ export class AutoDatabaseModule {
       synchronize: true,
     };
 
-    const connection = await createConnection(connectionOptions);
-
     return {
-      module: AutoDatabaseModule,
+      module: AutoLoadDatabaseModule,
       global: options.global,
-      providers: [
-        {
-          provide: 'DATABASE_CONNECTION',
-          useValue: connection,
-        },
-      ],
-      exports: ['DATABASE_CONNECTION'],
+      imports: [TypeOrmModule.forRoot(connectionOptions)]
     };
   }
 }
